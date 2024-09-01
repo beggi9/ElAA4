@@ -1,0 +1,10 @@
+function writeSubsystemCountsToExcel(subsystemCounts, filename)
+    % Sort the table by count in descending order for better organization
+    subsystemCounts = sortrows(subsystemCounts, 'Count', 'descend');
+    
+    % Write the table to an Excel file
+    writetable(subsystemCounts, filename);
+    
+    % Display a message indicating that the file has been written
+    fprintf('Subsystem counts have been written to %s\n', filename);
+end
