@@ -1,0 +1,37 @@
+## Set up gapseq on Linux virtual machine using miniconda/Anaconda
+conda create --name gapseq
+conda activate gapseq
+conda config --add channels defaults && conda config --add channels bioconda && conda config --add channels conda-forge
+# basic dependencies
+conda install bash r perl parallel gawk sed grep bc git coreutils wget
+
+# packages for handling biological sequences
+conda install barrnap bedtools exonerate glpk hmmer blast
+
+# install libSBML from bioconda
+conda install -c bioconda libsbml 
+
+# R-package dependencies (via conda repos)
+conda install r-data.table r-stringr r-stringi r-getopt r-doParallel r-foreach r-r.utils r-sybil r-biocmanager bioconductor-biostrings r-jsonlite 
+
+# additional R-package dependencies (via CRAN)
+Rscript -e 'if( file.access(Sys.getenv("R_LIBS_USER"), mode=2) == -1 ) dir.create(path = Sys.getenv("R_LIBS_USER"), showWarnings = FALSE, recursive = TRUE)'
+R -e 'install.packages(c("glpkAPI", "CHNOSZ"), repos="http://cran.us.r-project.org")'
+
+# Download & Install R-package 'sybilSBML'
+wget https://cran.r-project.org/src/contrib/Archive/sybilSBML/sybilSBML_3.1.2.tar.gz
+R CMD INSTALL --configure-args=" \
+--with-sbml-include=$CONDA_PREFIX/include \
+--with-sbml-lib=$CONDA_PREFIX/lib" sybilSBML_3.1.2.tar.gz
+# cloning gapseq
+git clone https://github.com/jotech/gapseq && cd gapseq
+# download ref.-sequence DB
+src/./update_sequences.sh
+# Optional step to test whether all packages and dependencies are working correctly:
+# ./gapseq test
+# gapseq has not been tested with R-Versions older than 3.6.3, authors recommended versions 4.0.0 or later.
+
+# If using the Matlab COBRA package then the following changes will need to be made to the getDataBases.m function:
+# Replace:    tokens = cellfun(@(x) regexp(x,'https?://identifiers\.org/([^/]*)/(.*)','tokens'),Ressources);
+# With:       tokens = cellfun(@(x) regexp(x,'https?://identifiers\.org/([^:/]*)[/:](.*)','tokens'),Ressources);
+# I flagged this issue to the COBRA toolbox developers and they have opened a pull request to address this.    
