@@ -1,0 +1,15 @@
+% Function to read Excel file and create expressionData structure
+function expressionData = createExpressionDataStructure(filename, sheetname)
+    % Read data from Excel file
+    [~, ~, rawData] = xlsread(filename, sheetname);
+    
+    % Extract gene IDs from the first column
+    geneColumn = rawData(:, 1);
+    
+    % Extract expression values from the second column
+    valueColumn = cell2mat(rawData(:, 2));
+    
+    % Create the structure
+    expressionData.gene = geneColumn;
+    expressionData.value = valueColumn;
+end
