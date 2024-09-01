@@ -1,0 +1,23 @@
+function [gene_id, gene_expr] = GenesInModelCheck(model, expressionData)
+    % Initialize empty cell arrays to store gene IDs and expression values
+    gene_id = {};
+    gene_expr = [];
+
+    % Loop through each gene in the model
+    for i = 1:length(model.genes)
+        % Get the current gene from the model
+        current_gene = model.genes{i};
+        
+        % Find the index of the current gene in the expressionData.gene list
+        idx = find(strcmp(expressionData.gene, current_gene));
+        
+        % If the gene is found in the expression data
+        if ~isempty(idx)
+            % Append the gene ID to gene_id
+            gene_id{end+1, 1} = current_gene;
+            
+            % Append the corresponding expression value to gene_expr
+            gene_expr(end+1, 1) = expressionData.value(idx);
+        end
+    end
+end
