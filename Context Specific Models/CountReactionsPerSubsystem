@@ -1,0 +1,15 @@
+function subsystemCounts = CountReactionsPerSubsystem(model)
+    % Extract the subsystems from the model
+    subsystems = model.subSystems;
+    
+    % Convert the cell array to a categorical array for easy counting
+    subsystemsCategorical = categorical(subsystems);
+    
+    % Get the unique subsystems and their counts
+    [uniqueSubsystems, ~, subsystemIdx] = unique(subsystemsCategorical);
+    counts = accumarray(subsystemIdx, 1);
+    
+    % Create a table to return the results
+    subsystemCounts = table(uniqueSubsystems, counts, ...
+                            'VariableNames', {'Subsystem', 'Count'});
+end
