@@ -1,0 +1,193 @@
+def specific_freqNT_fasta(input_file,SequenceCheckList,check_NT=True,each_Sequence=False):
+  '''
+  The specific_freqNT_fasta function takes in a FASTA file and returns a graph showing the frequency of each nucleotide base within all the specifically selected sequences in the file
+  It can also check whether the sequences are in valid format and show the results for each specific sequence in the file.
+
+  Parameters
+  ----------
+  input_file : should be a FASTA file that contains the gene names (denoted by '>') and the relevant nucleotide sequences, the file 
+  needs to be available in the directory or environment that the function is being used in.
+
+  SequenceCheckList: List containing the names of all the specific/targeted sequences (such as rRNA or tRNA) in string format. 
+  
+  check_NT : True or False
+             If True the function checks whether the characters in each sequence all match the symbols for the standard NTs
+  
+  each_Sequence : True or False
+                 If True the function also returns NT frequency graphs for each specific sequence
+  '''
+  ############################################################################
+  # Program to create graphs showing the frequency of NTs in selected sequences in FASTA files
+  # Author: B. Traustason (bergthor.traustason@lincoln.ox.ac.uk)
+  # Written 2021-05-21
+  # Last edited 2021-05-21
+  
+  # Please make sure that the FASTA file is in the correct format, i.e. that it contains only nucleotide sequences and that all sequences are denoted by
+  # '>'. For further information on the the format please see: https://en.wikipedia.org/wiki/FASTA_format
+  # Please note that this program does not support old FASTA format versions using semicolons (';') instead of '>'
+
+  # The program/function is split into sections, denoted with comment lines
+  # There is a brief explaination of what the code does at the beginning of each section
+  # There are also addtional comments in the code to give further and more detailed explainations
+
+  ############################################################################
+  # Section to import all necessary libraries, packages and modules
+
+  # Import necessary packages
+  from matplotlib import pyplot as plt
+  import numpy as np
+  from collections import Counter
+  
+  ############################################################################
+  # Section to import the entered FASTA file
+
+  # Open up the input file and add contents to "lines"
+  with open(input_file) as image_handle:
+    lines = []
+    for line in image_handle:
+      lines.append(line.strip())
+  
+  ############################################################################
+  # Section to go through file, add together the sequences, check the input data for any faults and count the genes discovered
+
+  # Start gene counter at zero, it will then go up by one for each gene in FASTA file
+  gene_counter = 0
+  selected_counter = 0
+  # Create empty string to add in all NTs
+  total_NT_seq = ''
+  selected_NT_seq = ''
+
+
+  # Creates an empty list for gene names if check_NT or each_Sequence are set as True
+  if (check_NT == True) or (each_Sequence == True):
+    gene_names = []
+    # List for the selected/specified sequences in "SequenceCheckList"
+    selected_names = []
+  # Creates an empty list to add in each specific gene sequence if each_Sequence is set as True
+  if each_Sequence == True:
+    # Empty list for each NT sequence
+    gene_seqs = []
+    # Empty list for each specified sequence
+    selected_gene_seqs = []
+    # Empty string to temporaly populate with the nucleotide sequence for each gene before adding to the list "gene_seqs" and "selected_gene_seqs" (as fit)
+    current_NT_seq = ''
+  
+  line_counter = 0
+  # for-loop to go through each of the lines in the input FASTA file and take together all the sequences
+  # If check_NT is set as True it will also check whether all characters in the sequences match the symbols for the standard bases in NTs
+  # If each_Sequence is set as True it will also collect the sequences for each specific sequence in the FASTA file
+  for i in lines:
+    
+    line_counter += 1
+    if len(i)==0:
+      # If there is an empty line in the file then skip to the next one
+      continue
+    
+    # Check whether the FASTA input file is in outdated format, if so prompt user to change it and terminate
+    if ';' == i[0]:
+      print('Sequence names should be indicated using \'>\'. Please note that this program does not work with versions using semicolons (\';\')')
+      return
+    # This section will only run if it is a line containing an nucleotide sequence (i.e. not a gene name)
+    elif '>' not in i:
+      # Adds the nucleotide sequence in the line i to the total sequence for the whole FASTA file
+      total_NT_seq += i
+      if selected == True:
+        selected_NT_seq += i
+      
+      # If the check_NT is set as True, the for-loop will go through each NT base (character) in the line i and check whether it is one of the standard bases in DNA
+      if check_NT == True:
+        for NT in range(0,len(i)):
+          if i[NT] not in ['A','T','G','C','U']: 
+            print('\033[91mWARNING: Gene no.', gene_counter,'('+gene_names[gene_counter-1][1:len(gene_names[gene_counter-1])]+')',
+                  'contains a character (\''+i[NT]+'\') not recognised as one of the standard bases\033[0m')
+      
+      # If the each_Sequence is set as True, this section will add together and store the sequences for each specific gene/sequence noted with ">"
+      if each_Sequence == True:
+        # This section will run when a new gene has started and it is not the first gene in the file
+        if (new_gene_start == True) and (gene_counter>1):
+          gene_seqs.append(current_NT_seq)
+          if selected == True:
+            selected_gene_seqs.append(current_NT_seq)
+          current_NT_seq = i
+          new_gene_start = False
+        # This section will run when a new gene/sequence has started and it is the first gene/sequence in the file
+        elif (new_gene_start == True):
+          current_NT_seq = i
+          new_gene_start = False
+        # This section will run for only the last line in the file
+        elif i == lines[len(lines)-1]:
+          current_NT_seq += i
+          gene_seqs.append(current_NT_seq)
+          if selected == True:
+            selected_gene_seqs.append(current_NT_seq)
+        # This section will run for all other lines (not a start of a new gene/sequence or end of the file)
+        else:
+          current_NT_seq += i
+
+    else:
+      # Adds one to the sequence counter for each gene/sequence discovered in the loaded FASTA file
+      gene_counter +=1
+      
+      # Adds the gene/sequence name into a list if check_NT or each_Sequence are set as "True"
+      if (check_NT == True) or (each_Sequence == True):
+        gene_names.append(i)
+      # Sets new_gene_start as True, since '>' denotes a start of a new gene
+      if each_Sequence == True:
+        new_gene_start = True
+      # Sets selected checker to False
+      selected = False
+      # Checks if new sequence is one of the specified ones
+      for locuses in SequenceCheckList:
+        if locuses in i:
+          selected = True
+          selected_counter +=1
+          selected_names.append(i)
+
+  # Safety checks to see whether the file is in the correct format
+  if gene_counter == 0:
+    print('Please check FASTA format. All sequences in the file must be preceded by a gene name denoted by \'>\' \n'
+    'No gene names were discovered in the input file')
+    return
+  if selected_counter < len(SequenceCheckList):
+    print('\033[91mWARNING: Not all the specified sequences were found in the input file, make sure all names are correct\033[0m')
+
+
+  # Print the number of genes in the FASTA file
+  print('Total number of sequences in the FASTA file: ',gene_counter)
+  print('Number of selected sequences in the FASTA file: ',selected_counter, '( out of',len(SequenceCheckList),')')
+  print('-'*55)
+
+  
+  ############################################################################
+  # Section to create frequency graph for all bases in the selected sequences
+
+  # Use the Counter function from collections to count the frequency of each base
+  NT_counts = Counter(selected_NT_seq)
+  Selected_counts = Counter(selected_NT_seq)
+  # Define the labels (the bases) and values (their frequency) from NT_counts defined above
+  labels, values = zip(*Selected_counts.items())
+  # Produce a graph to show the frequency of all the bases
+  plt.bar(labels,values)
+  plt.title('Frequency of all bases in FASTA file')
+  plt.xlabel('NT Bases')
+  plt.ylabel('Frequency')
+  plt.show()
+  print(NT_counts)
+  ############################################################################
+  # Section to create frequency graph for all bases in each specific gene
+
+  # This section will do the same as the section above, but perform it for each specific sequence
+  if each_Sequence == True:
+    # for-loop to create graph for each gene discovered in the input file
+    for k in range(0,len(selected_names)):
+      print('-'*55)
+      # Use the Counter function from collections to count the frequency of each base
+      selected_NT_counts_gene = Counter(selected_gene_seqs[k])
+      # Define the labels (the bases) and values (their frequency) from NT_counts defined above
+      labels, values = zip(*selected_NT_counts_gene.items())
+      # Produce a graph to show the frequency of all the bases
+      plt.bar(labels,values)
+      plt.title('Frequency of all NTs in: '+selected_names[k][1:len(selected_names[selected_counter-1])])
+      plt.xlabel('NT Bases')
+      plt.ylabel('Frequency')
+      plt.show()
