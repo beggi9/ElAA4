@@ -1,0 +1,167 @@
+def AAfreq_fasta(input_file,check_AA=True,each_Protein=False):
+  '''
+  The AAfreq_fasta function takes in a FASTA file (containing amino acid sequences) and returns a graph showing the frequency of each amino acid within that file.
+  It can also check whether the sequences are in valid format and show the results for each specific protein in the file.
+
+  Parameters
+  ----------
+  input_file : should be a FASTA file that contains the protein names (denoted by '>') and the relevant amino acid sequnces, the file 
+  needs to be available in the directory or environment that the function is being used in.
+  
+  check_AA : True or False
+             If True the function checks whether the characters in each sequence all match the symbols for the standard amino acids
+  
+  each_Protein : True or False
+                 If True the function also returns amino acid frequency graphs for each specific protein
+  '''
+  ############################################################################
+  # Program to create graphs showing the frequency of amino acids in FASTA files
+  # Author: B. Traustason (bergthor.traustason@lincoln.ox.ac.uk)
+  # Written 2020-05-21
+  # Last edited 2020-05-24
+  
+  # Please make sure that the FASTA file is in the correct format, i.e. that it contains only amino acid sequences and that all protein names are denoted by
+  # '>'. For further information on the the format please see: https://en.wikipedia.org/wiki/FASTA_format
+  # Please note that this program does not support old FASTA format versions using semicolons (';') instead of '>'
+
+  # The program/function is split into sections, denoted with comment lines
+  # There is a brief explaination of what the code does at the beginning of each section
+  # There are also addtional comments in the code to give further and more detailed explainations
+
+  # For more detailed information please see README.md file 
+
+  ############################################################################
+  # Section to import all necessary libraries, packages and modules
+
+  # Import necessary packages
+  from matplotlib import pyplot as plt
+  import numpy as np
+  from collections import Counter
+  
+  ############################################################################
+  # Section to import the entered FASTA file
+
+  # Open up the input file and add contents to "lines"
+  with open(input_file) as image_handle:
+    lines = []
+    for line in image_handle:
+      lines.append(line.strip())
+  
+  ############################################################################
+  # Section to go through file, add together the sequences, check the input data for any faults and count the proteins discovered
+
+  # Start protein counter at zero, it will then go up by one for each protein in FASTA file
+  protein_counter = 0
+  # Create empty string to add in all amino acid sequences
+  total_AA_seq = ''
+  
+  # Creates an empty list for protein names if check_AA or each_Protein are set as True
+  if (check_AA == True) or (each_Protein == True):
+    protein_names = []
+  # Creates an empty list to add in each specific protein sequence if each_Protein is set as True
+  if each_Protein == True:
+    # Empty list for each specific protein amino acid sequence
+    protein_seqs = []
+    # Empty string to temporaly populate with the amino acid sequence for each protein before adding to the list "protein_seqs"
+    current_AA_seq = ''
+  
+  line_counter = 0
+  # for-loop to go through each of the lines in the input FASTA file and take together all the sequences
+  # If check_AA is set as True it will also check whether all characters in the sequences match the symbols for the standard amino acids
+  # If each_Protein is set as True it will also collect the sequences for each specific protein in the FASTA file
+  for i in lines:
+    line_counter += 1
+    if len(i)==0:
+      # If there is an empty line in the file then skip to the next one
+      continue
+
+    # Check whether the FASTA input file is in outdated format, if so prompt user to change it and terminate
+    if ';' == i[0]:
+      print('Protein names should be indicated using \'>\'. This program does not work with versions using semicolons (\';\')')
+      return
+    # This section will only run if it is a line containing an amino acid sequence (i.e. not a protein name)
+    elif '>' not in i:
+      # Adds the amino acid sequence in the line i to the total sequence for the whole FASTA file
+      total_AA_seq += i
+      
+      # If the check_AA is set as True, the for-loop will go through each AA (character) in the line i and check whether it is one of the 20 standard amino acid symbols
+      # the asterisk (*) and hyphen (-) are included as they are often used to denote translation stops and gaps of indeterminate length, respectively.
+      if check_AA == True:
+        for AA in range(0,len(i)):
+          if i[AA] not in ['A','R','N','D','C','Q','E','G','H','I','L','K','M','F','P','S','T','W','Y','V','U','O','*','-']: 
+            print('\033[91mWARNING: Protein no.', protein_counter,'('+protein_names[protein_counter-1][1:len(protein_names[protein_counter-1])]+')',
+                  'contains a character (\''+i[AA]+'\') not recognised as one of the standard amino acids\033[0m')
+      
+      # If the each_Protein is set as True, this section will add together and store the sequences for each specific protein
+      if each_Protein == True:
+        # This section will run when a new protein has started and it is not the first protein in the file
+        if (new_protein_start == True) and (protein_counter>1):
+          protein_seqs.append(current_AA_seq)
+          current_AA_seq = i
+          new_protein_start = False
+        # This section will run when a new protein has started and it is the first protein in the file
+        elif (new_protein_start == True):
+          current_AA_seq = i
+          new_protein_start = False
+        # This section will run for only the last line in the file
+        elif i == lines[len(lines)-1]:
+          current_AA_seq += i
+          protein_seqs.append(current_AA_seq)
+        # This section will run for all other lines (not a start of a new protein or end of the file)
+        else:
+          current_AA_seq += i
+
+    else:
+      # Adds one to the protein counter for each protein discovered in the loaded FASTA file
+      protein_counter +=1
+      # Adds the protein name into a list if check_AA or each_Protein are set as "True"
+      if (check_AA == True) or (each_Protein == True):
+        protein_names.append(i)
+      # Sets new_protein_start as True, since '>' denotes a start of a new protein
+      if each_Protein == True:
+        new_protein_start = True
+  
+  # Safety check to see whether the file is in the correct format
+  if protein_counter == 0:
+    print('This file is not in the correct FASTA format. All sequences in the file must be preceded by a protein name denoted by \'>\' \n'
+    'No protein names were discovered in the input file')
+    return
+
+  # Print the number of proteins in the FASTA file
+  print('Number of proteins in the FASTA file: ',protein_counter)
+  print('-'*55)
+  
+  ############################################################################
+  # Section to create frequency graph for all amino acids in the whole FASTE file
+
+  # Use the Counter function from collections to count the frequency of each amino acid
+  AA_counts = Counter(total_AA_seq)
+  # Define the labels (the amino acids) and values (their frequency) from AA_counts defined above
+  labels, values = zip(*AA_counts.items())
+  # Produce a graph to show the frequency of all the amino acids
+  plt.bar(labels,values)
+  plt.title('Frequency of all amino acids in FASTA file')
+  plt.xlabel('Amino Acids')
+  plt.ylabel('Frequency')
+  plt.show()
+  
+  print(AA_counts)
+
+  ############################################################################
+  # Section to create frequency graph for all amino acids in each specific protein
+
+  # This section will do the same as the section above, but perform it for each specific protein
+  if each_Protein == True:
+    # for-loop to create graph for each protein discovered in the input file
+    for k in range(0,len(protein_names)):
+      print('-'*55)
+      # Use the Counter function from collections to count the frequency of each amino acid
+      AA_counts_protein = Counter(protein_seqs[k])
+      # Define the labels (the amino acids) and values (their frequency) from AA_counts defined above
+      labels, values = zip(*AA_counts_protein.items())
+      # Produce a graph to show the frequency of all the amino acids
+      plt.bar(labels,values)
+      plt.title('Frequency of all amino acids in: '+protein_names[k][1:len(protein_names[protein_counter-1])])
+      plt.xlabel('Amino Acids')
+      plt.ylabel('Frequency')
+      plt.show()
